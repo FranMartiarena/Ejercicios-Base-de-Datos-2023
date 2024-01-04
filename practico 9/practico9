@@ -1,0 +1,246 @@
+--Especificar en la colección users las siguientes reglas de validación: El campo name (requerido) debe ser un string con un máximo de 30 caracteres, email (requerido) debe ser un string que matchee con la expresión regular: "^(.*)@(.*)\\.(.{2,4})$" , password (requerido) debe ser un string con al menos 50 caracteres.
+
+db.runCommand( { 
+                collMod: "users",
+                validator: { $jsonSchema: 
+                                {
+                                    bsonType: "object",
+                                    required: [ "name", "email", "password" ],
+                                    properties: 
+                                    {
+                                        name:
+                                        {
+                                            bsonType: "string",
+                                            maxLength: 30,
+                                            description: "must be a string of max 30 chars and is required"
+                                        },
+                                        
+                                        email: 
+                                        {
+                                            bsonType: "string",
+                                            pattern: "^(.*)@(.*)\\.(.{2,4})$",
+                                            description: "must be a string and is required"
+                                        },
+                                        password:
+                                        {
+                                            bsonType: "string",
+                                            minLength: 50
+                                        }
+                                    }
+                               } 
+                            },
+                validationLevel: "moderate"
+
+             } )
+             
+             
+--Obtener metadata de la colección users que garantice que las reglas de validación fueron correctamente aplicadas.
+db.getCollectionInfos()
+
+--Especificar en la colección theaters las siguientes reglas de validación: El campo theaterId (requerido) debe ser un int y location (requerido) debe ser un object con:
+--un campo address (requerido) que sea un object con campos street1, city, state y zipcode todos de tipo string y requeridos
+--un campo geo (no requerido) que sea un object con un campo type, con valores posibles “Point” o null y coordinates que debe ser una lista de 2 doubles
+
+db.runCommand( { 
+                collMod: "theaters",
+                validator: { $jsonSchema: 
+                                {
+                                    bsonType: "object",
+                                    required: [ "theaterId", "location" ],
+                                    properties: 
+                                    {
+                                        theaterId:
+                                        {
+                                            bsonType: "int",
+                                            description: "must be a int and is required"
+                                        },
+                                        
+                                        location: 
+                                        {
+                                            bsonType: "object",
+                                            required: ["address"],
+                                            properties:
+                                            {
+                                                address:
+                                                {
+                                                    bsonType: "object",
+                                                    required: ["street1", "city","state", "zipcode"],
+                                                    properties:
+                                                    {
+                                                        street1:
+                                                        {
+                                                            bsonType: "string",
+                                                            description: "must be a string and is required"    
+                                                        },
+                                                        city:
+                                                        {
+                                                            bsonType: "string",
+                                                            description: "must be a string and is required"    
+                                                        },
+                                                        state:
+                                                        {
+                                                            bsonType: "string",
+                                                            description: "must be a string and is required"    
+                                                        },
+                                                        zipcode:
+                                                        {
+                                                            bsonType: "string",
+                                                            description: "must be a string and is required"    
+                                                        }
+                                                    }
+                                                },
+                                                geo:
+                                                {
+                                                    bsonType: "object",
+                                                    properties:
+                                                    {
+                                                        type:
+                                                        {
+                                                            enum:["Point", null],
+                                                            description: "must be a enum value"    
+                                                        },
+                                                        coordinates:
+                                                        {
+                                                            bsonType: "array",
+                                                            items: {
+                                                                bsonType: "double"
+                                                            },
+                                                            description: "must be a enum value"   
+                                                        }
+                                                        
+                                                    }
+                                                }    
+                                            }
+                                        }
+                                    }
+                               } 
+                            },
+                validationLevel: "moderate",
+                validationAction: "warn"
+
+             } )
+             
+
+--Especificar en la colección movies las siguientes reglas de validación: El campo title (requerido) es de tipo string, year (requerido) int con mínimo en 1900 y máximo en 3000, y que tanto cast, directors, countries, como genres sean arrays de strings sin duplicados.
+
+--Hint: Usar el constructor NumberInt() para especificar valores enteros a la hora de insertar documentos. Recordar que mongo shell es un intérprete javascript y en javascript los literales numéricos son de tipo Number (double).
+
+db.runCommand( { 
+                collMod: "movies",
+                validator: { $jsonSchema: 
+                                {
+                                    bsonType: "object",
+                                    required: [ "title", "year" ],
+                                    properties: 
+                                    {
+                                        title:
+                                        {
+                                            bsonType: "string",
+                                            description: "must be a string  and is required"
+                                        },
+                                        
+                                        year: 
+                                        {
+                                            bsonType: "int",
+                                            minimum:1900,
+                                            maximum: 3000,
+                                            description: "must be a int between 1900 and 3000 and is required"
+                                        },
+                                        cast:
+                                        {
+                                            bsonType: "array",
+                                            items: {
+                                                bsonType: "string"
+                                            },
+                                            uniqueItems: true
+                                        },
+                                        directors:
+                                        {
+                                            bsonType: "array",
+                                            items: {
+                                                bsonType: "string"
+                                            },
+                                            uniqueItems: true
+                                        },
+                                        countries:
+                                        {
+                                            bsonType: "array",
+                                            items: {
+                                                bsonType: "string"
+                                            },
+                                            uniqueItems: true
+                                        },
+                                        genres:
+                                        {
+                                            bsonType: "array",
+                                            items: {
+                                                bsonType: "string"
+                                            },
+                                            uniqueItems: true
+                                        }
+                                    }
+                               } 
+                            },
+    validationLevel: "moderate",
+    validationAction: "error"
+
+             } )
+             
+
+--Crear una colección userProfiles con las siguientes reglas de validación: Tenga un campo user_id (requerido) de tipo “objectId”, un campo language (requerido) con alguno de los siguientes valores [ “English”, “Spanish”, “Portuguese” ] y un campo favorite_genres (no requerido) que sea un array de strings sin duplicados.
+
+db.createCollection("userProfiles", 
+{
+    validator: 
+    {
+        $jsonSchema: 
+        {
+            bsonType: "object",
+            required: [ "user_id","language" ],
+            properties: 
+            {
+                user_id: 
+                {
+                    bsonType: "objectId"
+                },
+                language: 
+                {
+                    enum:[ "English", "Spanish", "Portuguese" ]
+                },
+                favorite_genres:
+                {
+                    bsonType: "array",
+                    items: {
+                        bsonType: "string"
+                    },
+                    uniqueItems: true 
+                }
+            }
+        }
+    }
+})
+
+
+--Identificar los distintos tipos de relaciones (One-To-One, One-To-Many) en las colecciones movies y comments. Determinar si se usó documentos anidados o referencias en cada relación y justificar la razón.
+
+la relacion es one to many (una pelicula tiene muchos comentarios) y se uso el patron parent referencing, es decir que cada comentarios tiene un id de la pelicula a la que pertenece. Se usa para modelar en One-to-Squillon, en donde los comentarios por pelicula podrian ser mas de 1000.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
